@@ -314,8 +314,7 @@ if __name__ == '__main__':
 
     GLOBAL_DATA.update({'images_data': images_data})
     GLOBAL_DATA.update({'counter': 0,
-                        # 'batch_size': 15,
-                        'w': 1024, 'h': 768})  # Pour éviter de transférer trop de données
+                        'w': 3072, 'h': 2304})  # Pour éviter de transférer trop de données
     GLOBAL_DATA.update({'base_url': 'http://127.0.0.1:5000/'})  # L'adresse du serveur; aussi dans le client
     GLOBAL_DATA.update({'resultats_inference': {}})  # Contient les résultats des inférences
 
