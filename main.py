@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from multiprocessing import freeze_support
+from tqdm import tqdm
 import base64
 from einops import rearrange, reduce, repeat
 import pathlib
@@ -42,26 +43,6 @@ Session(app)
 
 GLOBAL_DATA = {}
 
-# APPRANTI_360__COLORS = {
-#     'C': (255, 0, 0, 'Red'),
-#     'CP': (0, 255, 0, 'Green'),
-#     'D': (0, 0, 255, 'Blue'),
-#     'DE': (255, 255, 0, 'Yellow'),
-#     'DEP': (255, 0, 255, 'Magenta'),
-#     'E': (0, 255, 255, 'Cyan'),
-#     'EC': (128, 0, 0, 'Maroon'),
-#     'F': (0, 128, 0, 'Olive'),
-#     'FD': (0, 0, 128, 'Navy'),
-#     'FI': (128, 128, 0, 'Olive Green'),
-#     'FJ': (128, 0, 128, 'Purple'),
-#     'FJM': (0, 128, 128, 'Teal'),  # sarcelle
-#     'FP': (255, 165, 0, 'Orange'),
-#     'NC': (128, 128, 128, 'Gray'),
-#     'TC': (255, 255, 255, 'White'),
-#     # Défauts agrégés
-#     'Anomalie': (255, 255, 255, 'White'),
-#     'Fissures_F-FD-FI-FJ-FJM': (0, 128, 0, 'Olive'),
-# }
 
 def _generate_image(image_id=None):
     # Save the image to an in-memory file (BytesIO)
@@ -76,33 +57,39 @@ def _generate_image(image_id=None):
         # print(f'[{formatted_datetime}]REMOVE ME -- {file_path=}  {image_id=}', flush=True)
         image = cv2.imread(file_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, dsize=(w, h), interpolation=cv2.INTER_LANCZOS4)
+        image = cv2.resize(image, dsize=(w, h))
         image = Image.fromarray(image)
 
     image.save(image_io, format='JPEG')
     return image_io.getvalue()
 
 
+def _build_preview():
+    _base_url = GLOBAL_DATA['base_url'] + 'posteinformatique/get_image?'
+    image_key = list(GLOBAL_DATA['images_data'].keys())
+    urls_data, names_data = "[", "["
+    for j in tqdm(range(0, len(image_key))):
+        the_key = image_key[j]
+        fullpath, filename = GLOBAL_DATA['images_data'][the_key]
+        urls_data += f"\"{_base_url}imgid={the_key}\""
+        names_data += f"\"{filename}\""
+        if j < len(image_key) - 1:
+            urls_data += ","
+            names_data += ","
+    urls_data += "]"
+    names_data += "]"
+
+    return {'batch_size': 1, 'number_batches': len(image_key) - 1, 'images_url': urls_data, 'images_name': names_data}
+
+
 @app.route('/posteinformatique/listeimagespreview2', methods=['POST'])
 def a360_pi_liste_imagespreview2():
     try:
         GLOBAL_DATA['counter'] += 1
-        _base_url = GLOBAL_DATA['base_url'] + 'posteinformatique/get_image?'
-        image_key = list(GLOBAL_DATA['images_data'].keys())
-        urls_data, names_data = "[", "["
-        for j in range(0, len(image_key)):
-            the_key = image_key[j]
-            fullpath, filename = GLOBAL_DATA['images_data'][the_key]
-            urls_data += f"\"{_base_url}imgid={the_key}\""
-            names_data += f"\"{filename}\""
-            if j < len(image_key) - 1:
-                urls_data += ","
-                names_data += ","
-        urls_data += "]"
-        names_data += "]"
 
-        return jsonify({'batch_size': 1, 'number_batches': len(image_key) - 1,
-                        'images_url': urls_data, 'images_name': names_data})
+        result = GLOBAL_DATA['preview']
+
+        return jsonify(result)
     except Exception as e:
         return jsonify({'error': f'Error processing image: {str(e)}'}), 500
 
@@ -236,8 +223,8 @@ def do_inference_with_image():
     h, w = np.array(Image.open(image_io)).shape[:2]
 
     job_id = f'{int(uuid.uuid4())}'
-
-    in__shared = GLOBAL_DATA['in__shared']
+    model_id = data.get('model_id', 'mock')
+    in__shared = get_in__shared(model_id)
     try:
         in__shared.put_nowait({'image_bytes': image_io, 'job_id': job_id, 'h': h, 'w': w})
     except:
@@ -287,16 +274,16 @@ def worker_processor_mock(configuration, ):
             assert os.path.exists(file_path)
             image = cv2.imread(file_path)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image = cv2.resize(image, dsize=(w_fe, h_fe), interpolation=cv2.INTER_LANCZOS4)
+            image = cv2.resize(image, dsize=(w_fe, h_fe))
             image = Image.fromarray(image)
+            height_fe, width_fe = configuration['h_frontend'], configuration['w_frontend']
         else:  # We received the data from the client
             assert 'image_bytes' in payload
-            image_io, job_id, h_fe, w_fe = payload['image_bytes'], payload['job_id'], configuration['h_frontend'], configuration['w_frontend']
+            image_io, job_id = payload['image_bytes'], payload['job_id']
             image = Image.open(image_io)
-            image = image.resize((w_fe, h_fe), Image.ANTIALIAS)
+            height_fe, width_fe = image.height, image.width
 
         # Do some work with model
-        height_fe, width_fe = configuration['h_frontend'], configuration['w_frontend']
         mask = np.random.randint(0, 256, (height_fe, width_fe, 3), dtype=np.uint8)
 
         # Define rectangle parameters (x, y, width, height) for each corner
@@ -380,12 +367,15 @@ def worker_processor_SAM(configuration):
             assert os.path.exists(file_path)
             image = cv2.imread(file_path)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image = cv2.resize(image, dsize=(w_in, h_in), interpolation=cv2.INTER_LANCZOS4)
+            image = cv2.resize(image, dsize=(w_in, h_in))
+            height_fe, width_fe = configuration['h_frontend'], configuration['w_frontend']
         else:  # We received the data from the client
             assert 'image_bytes' in payload
-            image_io, job_id, h_in, w_in = payload['image_bytes'], payload['job_id'], configuration['h_img__in'], configuration['w_img__in']
+            image_io, job_id, h_in, w_in = payload['image_bytes'], payload['job_id'], config['h_img__in'], config['w_img__in']
             image = Image.open(image_io)
-            image = image.resize((w_in, h_in), Image.ANTIALIAS)
+            height_fe, width_fe = image.height, image.width  # Dimension de l'image affichée dans l'application
+            image = image.resize((w_in, h_in))
+            image = np.asarray(image)
 
         # Do some work with model
         x, images_x = image, []
@@ -397,11 +387,10 @@ def worker_processor_SAM(configuration):
         t1 = time.time()
         y_pred = model(batched_input=x)
         t2 = time.time()
-        logger.debug(f'[{os.getpid()}] Inference done in {t2-t1:0.4} sec')
+        logger.debug(f'[{os.getpid()}] [{configuration["description"]}] Inference done in {t2-t1:0.4} sec')
 
         # Dessine les prédictions
-        height_fe, width_fe = configuration['h_frontend'], configuration['w_frontend']
-        the_y_pred = torch.zeros(config['h_img__out'], config['w_img__out'], 3, dtype=torch.float32)
+        the_y_pred = torch.zeros(config['h_img__out'], config['w_img__out'], 3, dtype=torch.float32, device=config["device"])
         for class_id in range(1, num_classes):
             tmp_pred_y = torch.stack((y_pred[0][class_id] * 1,) * 3, dim=2)
             assert np.prod(tmp_pred_y.shape) == torch.count_nonzero(tmp_pred_y == 0) + torch.count_nonzero(tmp_pred_y == 1)
@@ -409,7 +398,7 @@ def worker_processor_SAM(configuration):
             tmp_pred_y = tmp_pred_y * torch.tensor(the_color, dtype=torch.float32, device=config["device"])
             the_y_pred = the_y_pred + tmp_pred_y
         the_y_pred = the_y_pred.cpu().numpy()
-        mask = cv2.resize(the_y_pred, dsize=(width_fe, height_fe), interpolation=cv2.INTER_LANCZOS4)
+        mask = cv2.resize(the_y_pred, dsize=(width_fe, height_fe))
 
         # Retourne la réponse
         while True:
@@ -442,6 +431,7 @@ if __name__ == '__main__':
     GLOBAL_DATA.update({'counter': 0,
                         'w': 4096, 'h': 3072})  # (h,w) des images lues sur le disque. C'est pour éviter de transférer trop de données ;)
     GLOBAL_DATA.update({'base_url': 'http://127.0.0.1:5000/'})  # L'adresse du serveur; aussi dans le client
+    GLOBAL_DATA.update({'preview': _build_preview()})  # Construit la liste des images disponibles pour le client
     GLOBAL_DATA.update({'resultats_inference': {}})  # Contient les résultats des inférences
 
     couleurs = {
