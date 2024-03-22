@@ -451,16 +451,16 @@ if __name__ == '__main__':
                                                                   'sam_checkpoint': sam_checkpoint,
                                                                   'weights': os.path.join(weights_dir, '10CL')}}})
 
-    ###########################################################################
-    # 5CL
-    ###########################################################################
-    GLOBAL_DATA.update({'worker_sam__5CL': {'in__shared': Queue(32), 'out__shared': Queue(32), 'path_code_source': path_code_source, 'description': 'Modèle 5 classes (2024.03.15)',
-                                             'w_frontend': GLOBAL_DATA['w'], 'h_frontend': GLOBAL_DATA['h'],
-                                             'couleurs': couleurs,
-                                             'model_parameters': {'w_img__in': 500, 'h_img__in': 500, 'w_img__out': 1500, 'h_img__out': 1500, 'device': 'cpu', 'rank': 4, 'num_classes': 5 + 1,
-                                                                  'cat_id__2__cat_name': {1: 'F', 2: 'FD', 3: 'FI', 4: 'FJ', 5: 'FJM'},
-                                                                  'sam_checkpoint': sam_checkpoint,
-                                                                  'weights': os.path.join(weights_dir, '5CL')}}})
+    # ###########################################################################
+    # # 5CL
+    # ###########################################################################
+    # GLOBAL_DATA.update({'worker_sam__5CL': {'in__shared': Queue(32), 'out__shared': Queue(32), 'path_code_source': path_code_source, 'description': 'Modèle 5 classes (2024.03.15)',
+    #                                          'w_frontend': GLOBAL_DATA['w'], 'h_frontend': GLOBAL_DATA['h'],
+    #                                          'couleurs': couleurs,
+    #                                          'model_parameters': {'w_img__in': 500, 'h_img__in': 500, 'w_img__out': 1500, 'h_img__out': 1500, 'device': 'cpu', 'rank': 4, 'num_classes': 5 + 1,
+    #                                                               'cat_id__2__cat_name': {1: 'F', 2: 'FD', 3: 'FI', 4: 'FJ', 5: 'FJM'},
+    #                                                               'sam_checkpoint': sam_checkpoint,
+    #                                                               'weights': os.path.join(weights_dir, '5CL')}}})
 
     ###########################################################################
     # Anomalie
@@ -473,27 +473,27 @@ if __name__ == '__main__':
                                                                  'sam_checkpoint': sam_checkpoint,
                                                                  'weights': os.path.join(weights_dir, 'anomalie')}}})
 
-    ###########################################################################
-    # D
-    ###########################################################################
-    GLOBAL_DATA.update({'worker_sam__D': {'in__shared': Queue(32), 'out__shared': Queue(32), 'path_code_source': path_code_source, 'description': 'Modèle D (2024.03.15)',
-                                                 'w_frontend': GLOBAL_DATA['w'], 'h_frontend': GLOBAL_DATA['h'],
-                                                 'couleurs': couleurs,
-                                                 'model_parameters': {'w_img__in': 500, 'h_img__in': 500, 'w_img__out': 1500, 'h_img__out': 1500, 'device': 'cpu', 'rank': 4, 'num_classes': 1 + 1,
-                                                                      'cat_id__2__cat_name': {1: 'D'},
-                                                                      'sam_checkpoint': sam_checkpoint,
-                                                                      'weights': os.path.join(weights_dir, 'D')}}})
-
-    ###########################################################################
-    # F
-    ###########################################################################
-    GLOBAL_DATA.update({'worker_sam__F': {'in__shared': Queue(32), 'out__shared': Queue(32), 'path_code_source': path_code_source, 'description': 'Modèle F (2024.03.15)',
-                                          'w_frontend': GLOBAL_DATA['w'], 'h_frontend': GLOBAL_DATA['h'],
-                                          'couleurs': couleurs,
-                                          'model_parameters': {'w_img__in': 500, 'h_img__in': 500, 'w_img__out': 1500, 'h_img__out': 1500, 'device': 'cpu', 'rank': 4, 'num_classes': 1 + 1,
-                                                               'cat_id__2__cat_name': {1: 'F'},
-                                                               'sam_checkpoint': sam_checkpoint,
-                                                               'weights': os.path.join(weights_dir, 'F')}}})
+    # ###########################################################################
+    # # D
+    # ###########################################################################
+    # GLOBAL_DATA.update({'worker_sam__D': {'in__shared': Queue(32), 'out__shared': Queue(32), 'path_code_source': path_code_source, 'description': 'Modèle D (2024.03.15)',
+    #                                              'w_frontend': GLOBAL_DATA['w'], 'h_frontend': GLOBAL_DATA['h'],
+    #                                              'couleurs': couleurs,
+    #                                              'model_parameters': {'w_img__in': 500, 'h_img__in': 500, 'w_img__out': 1500, 'h_img__out': 1500, 'device': 'cpu', 'rank': 4, 'num_classes': 1 + 1,
+    #                                                                   'cat_id__2__cat_name': {1: 'D'},
+    #                                                                   'sam_checkpoint': sam_checkpoint,
+    #                                                                   'weights': os.path.join(weights_dir, 'D')}}})
+    #
+    # ###########################################################################
+    # # F
+    # ###########################################################################
+    # GLOBAL_DATA.update({'worker_sam__F': {'in__shared': Queue(32), 'out__shared': Queue(32), 'path_code_source': path_code_source, 'description': 'Modèle F (2024.03.15)',
+    #                                       'w_frontend': GLOBAL_DATA['w'], 'h_frontend': GLOBAL_DATA['h'],
+    #                                       'couleurs': couleurs,
+    #                                       'model_parameters': {'w_img__in': 500, 'h_img__in': 500, 'w_img__out': 1500, 'h_img__out': 1500, 'device': 'cpu', 'rank': 4, 'num_classes': 1 + 1,
+    #                                                            'cat_id__2__cat_name': {1: 'F'},
+    #                                                            'sam_checkpoint': sam_checkpoint,
+    #                                                            'weights': os.path.join(weights_dir, 'F')}}})
 
     ###########################################################################
     # C
